@@ -1,20 +1,27 @@
 package com.example.lbank.customer;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import com.example.lbank.transactions.Transactions;
+
 
 @Entity
 @Table
-public class CustomerDetails {
+public class CustomerDetails implements Serializable{
 	@Id
 	@SequenceGenerator(
 			name = "customer_sequence",
@@ -26,6 +33,11 @@ public class CustomerDetails {
 			generator = "customer_sequence"
 			)
 	private Long id;
+	
+	@OneToMany(cascade = CascadeType.ALL)
+	@JoinColumn(name = "id")
+	private Set<Transactions> transactions;
+	
 	private String firstName;
 	private String lastName;
 	private String email;

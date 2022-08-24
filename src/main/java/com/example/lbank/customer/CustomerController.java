@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(path = "api/v1/customer") 
 public class CustomerController {
 	
-	private final CustomerService customerService;
+	private CustomerService customerService;
 	
 	@Autowired
 	public CustomerController(CustomerService customerService) {
