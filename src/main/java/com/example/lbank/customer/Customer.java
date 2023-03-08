@@ -1,27 +1,17 @@
 package com.example.lbank.customer;
 
+import com.example.lbank.transactions.Transactions;
+
+import javax.persistence.*;
 import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.OneToMany;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
-import javax.persistence.Transient;
-
-import com.example.lbank.transactions.Transactions;
-
 
 @Entity
-@Table
-public class CustomerDetails implements Serializable{
+@Table(name = "customer")
+public class Customer implements Serializable{
 	@Id
 	@SequenceGenerator(
 			name = "customer_sequence",
@@ -34,40 +24,57 @@ public class CustomerDetails implements Serializable{
 			)
 	private Long id;
 	
-	@OneToMany(cascade = CascadeType.ALL)
-	@JoinColumn(name = "id")
-	private Set<Transactions> transactions;
-	
 	private String firstName;
 	private String lastName;
 	private String email;
 	private String address;
 	private Long phoneNumber;
 	private LocalDate dob;
+
+	private String password;
+	@Column(name = "customerId")
+	private String customerId;
 	@Transient
 	private Integer age;
-	
-	public CustomerDetails() {
-		
+
+	@OneToMany(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	private Set<Transactions> transactions;
+
+//	@OneToOne(mappedBy = "customer", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+//	private Balance balance;
+
+
+	public Customer() {
 	}
-	
-	public CustomerDetails(Long id, String firstName, String lastName, String email, String address, Long phoneNumber, LocalDate dob) {
+	public Customer(Long id, String firstName, String lastName, String email, String address, Long phoneNumber,String customerId, LocalDate dob, String password) {
 		this.id = id;
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.address = address;
 		this.phoneNumber = phoneNumber;
 		this.dob = dob;
+		this.customerId = customerId;
 		this.email = email;
+		this.password = password;
 	}
 
-	public CustomerDetails(String firstName, String lastName, String email, String address, Long phoneNumber, LocalDate dob) {
+	public Customer(String firstName, String lastName, String email, String address, Long phoneNumber, String customerId, LocalDate dob, String password) {
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.address = address;
 		this.phoneNumber = phoneNumber;
 		this.dob = dob;
 		this.email = email;
+		this.customerId = customerId;
+		this.password = password;
+	}
+
+	public String getCustomerId() {
+		return customerId;
+	}
+
+	public void setCustomerId(String customerId) {
+		this.customerId = customerId;
 	}
 
 	public Long getId() {
@@ -134,14 +141,28 @@ public class CustomerDetails implements Serializable{
 		this.age = age;
 	}
 
-	@Override
-	public String toString() {
-		return "CustomerDetails [id=" + id + ", firstName=" + firstName + ", lastName=" + lastName + ", email=" + email
-				+ ", address=" + address + ", phoneNumber=" + phoneNumber + ", dob=" + dob + ", age=" + age + "]";
+	public String getPassword() {
+		return password;
 	}
 
-	
-	
-	
+	public void setPassword(String password) {
+		this.password = password;
+	}
 
+
+	@Override
+	public String toString() {
+		return "CustomerDetails{" +
+				"id=" + id +
+				", firstName='" + firstName + '\'' +
+				", lastName='" + lastName + '\'' +
+				", email='" + email + '\'' +
+				", address='" + address + '\'' +
+				", phoneNumber=" + phoneNumber +
+				", dob=" + dob +
+				", customerId='" + customerId + '\'' +
+				", age=" + age +
+				", password=" + password +
+				'}';
+	}
 }

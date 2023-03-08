@@ -1,26 +1,94 @@
 package com.example.lbank.transactions;
 
-import java.util.List;
+import com.example.lbank.Exception.UserNotFoundException;
+import com.example.lbank.customer.Customer;
+import com.example.lbank.customer.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
+
+import java.util.Set;
 
 @Service
 public class TransactionService {
 	public final TransactionRepository transactionRepository;
-	
+	public final BalanceRepository balanceRepository;
+	private final CustomerRepository customerRepository;
+
 	@Autowired
-	public TransactionService(TransactionRepository transactionRepository) {
+	public TransactionService(TransactionRepository transactionRepository, BalanceRepository balanceRepository, CustomerRepository customerRepository) {
 		this.transactionRepository = transactionRepository;
+		this.balanceRepository = balanceRepository;
+		this.customerRepository = customerRepository;
 	}
 	
-	public List<Transactions> getTransactions(){
-		return transactionRepository.findAll();
+	public Set<Transactions> getTransactions(Customer customer){
+		String customerUUID = customer.getCustomerId();
+		return transactionRepository.findAllByCustomer(customerUUID);
 	}
 
-	public void addTransaction(Transactions transactions) {
-		transactionRepository.save(transactions);
+	public Transactions addTransaction(TransactionDTO transactionDTO) {
+		Transactions transactions = new Transactions();
+		Customer customer = getCustomer(transactionDTO.getCustomerId());
+		transactions.setCustomer(customer);
+//		transactions.setId(transactionDTO.getId());
+		transactions.setDescription(transactionDTO.getDescription());
+		transactions.setDate(transactionDTO.getDate());
+		transactions.setAmount(transactionDTO.getAmount());
+		Balance balance = balanceRepository.findTopByCustomerId(transactionDTO.getCustomerId());
+		Double currentBalance = balance.getBalance();
+		Double nBalance = currentBalance - transactions.getAmount();
+		transactions.setBalance(nBalance);
+
+		Balance newBalance = new Balance();
+		newBalance.setId(balance.getId());
+		newBalance.setBalance(nBalance);
+		newBalance.setCustomerId(customer.getCustomerId());
+		balanceRepository.save(newBalance);
+
+		return transactionRepository.save(transactions);
 	}
-	
-		
+
+
+	public Boolean checkBalance(@Param("customer") Double price, String customer){
+		Balance balance = balanceRepository.findTopByCustomerId(customer);
+		return balance.getBalance() > price;
+	}
+
+	public String deposit(Deposit deposit){
+		String customerId = deposit.getCustomerId();
+		Balance customerBalance = balanceRepository.findTopByCustomerId(customerId);
+
+		Balance newBalance = new Balance();
+		Customer customer = getCustomer(deposit.getCustomerId());
+		if(customerBalance == null){
+			newBalance.setBalance(deposit.getAmount());
+			newBalance.setCustomerId(customer.getCustomerId());
+			balanceRepository.save(newBalance);
+			return "First time deposit";
+		}
+
+		Double currentBalance = customerBalance.getBalance();
+		Double nBalance = currentBalance + deposit.getAmount();
+		customerBalance.setBalance(nBalance);
+		newBalance.setBalance(nBalance);
+		balanceRepository.save(newBalance);
+		return "Deposit completed";
+	}
+
+
+	public Double getBalance(String customerId){
+		Balance balance = balanceRepository.findTopByCustomerId(customerId);
+		if(balance == null){
+			return 0.00;
+		}
+		return  balance.getBalance();
+	}
+
+	private Customer getCustomer(@Param("customerId") String customerId){
+		Customer customer = customerRepository.findByCustomerUUID(customerId)
+				.orElseThrow(() -> new UserNotFoundException("No customer found with UUID - " + customerId));
+		return customer;
+	}
 
 }

@@ -1,19 +1,15 @@
 package com.example.lbank.transactions;
 
 
-import java.io.Serializable;
+import com.example.lbank.customer.Customer;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.persistence.SequenceGenerator;
-import javax.persistence.Table;
+import javax.persistence.*;
+import java.io.Serializable;
+import java.time.LocalDate;
 
 
 @Entity
-@Table
+@Table(name = "Transactions")
 public class Transactions implements Serializable{
 	@Id
 	@SequenceGenerator(
@@ -26,19 +22,25 @@ public class Transactions implements Serializable{
 		generator = "transaction_sequence"
 			)	
 	private Long id;
-	
-	@OneToMany(mappedBy = "id")
-	private Long customerId;
+
+	@ManyToOne(fetch = FetchType.LAZY, optional = true)
+	@JoinColumn(name = "customerId")
+	private Customer customer;
+	private LocalDate date;
 	private String description;
-	private double price;
-	private double balance;
+	private Double amount;
+
+	@Transient
+	private Double balance;
 
 
-	public Transactions(Long customerId, String description, double price, double balance) {
-		this.customerId = customerId;
+	public Transactions(){
+	}
+	public Transactions(String description, double price, double balance, LocalDate date) {
 		this.description = description;
-		this.price = price;
+		this.amount = price;
 		this.balance = balance;
+		this.date = date;
 	}
 	
 	public Long getId() {
@@ -47,35 +49,53 @@ public class Transactions implements Serializable{
 	public void setId(Long id) {
 		this.id = id;
 	}
-	public Long getCustomerId() {
-		return customerId;
+
+	public Customer getCustomer() {
+		return customer;
 	}
-	public void setCustomerId(Long customerId) {
-		this.customerId = customerId;
+
+	public void setCustomer(Customer customer) {
+		this.customer = customer;
 	}
+
+	public String getCustomerUUID() {
+		return customer.getCustomerId();
+	}
+	public void setCustomerUUID(String customer) {
+		this.customer.setCustomerId(customer);
+	}
+
+	public LocalDate getDate() {
+		return date;
+	}
+
+	public void setDate(LocalDate date) {
+		this.date = date;
+	}
+
 	public String getDescription() {
 		return description;
 	}
 	public void setDescription(String description) {
 		this.description = description;
 	}
-	public double getPrice() {
-		return price;
+	public Double getAmount() {
+		return amount;
 	}
-	public void setPrice(double price) {
-		this.price = price;
+	public void setAmount(Double amount) {
+		this.amount = amount;
 	}
-	public double getBalance() {
+	public Double getBalance() {
 		return balance;
 	}
-	public void setBalance(double balance) {
+	public void setBalance(Double balance) {
 		this.balance = balance;
 	}
 
 	@Override
 	public String toString() {
-		return "Transactions [id=" + id + ", customerId=" + customerId + ", description=" + description + ", price="
-				+ price + ", balance=" + balance + "]";
+		return "Transactions [id=" + id + ", customerId=" + customer.getCustomerId() + ", description=" + description + ", amount="
+				+ amount + ", date=" + date + ", balance=" + balance + "]";
 	}
 	
 	
