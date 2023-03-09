@@ -28,11 +28,12 @@ public class TransactionService {
 		return transactionRepository.findAllByCustomer(customerUUID);
 	}
 
-	public Transactions addTransaction(TransactionDTO transactionDTO, Boolean addMoney) {
-		Transactions transactions = new Transactions();
+	public Transactions addTransaction(TransactionDTO transactionDTO, Boolean isDeposit) {
+
 		Customer customer = getCustomer(transactionDTO.getCustomerId());
+
+		Transactions transactions = new Transactions();
 		transactions.setCustomer(customer);
-//		transactions.setId(transactionDTO.getId());
 		transactions.setDescription(transactionDTO.getDescription());
 		transactions.setDate(transactionDTO.getDate());
 		transactions.setAmount(transactionDTO.getAmount());
@@ -40,20 +41,15 @@ public class TransactionService {
 		Balance balance = balanceRepository.findTopByCustomerId(transactionDTO.getCustomerId());
 		Double currentBalance = balance.getBalance();
 		Double nBalance;
-		if(addMoney){
+		if(isDeposit){
 			nBalance = currentBalance + transactions.getAmount();
 		}else{
 			nBalance = currentBalance - transactions.getAmount();
 
-			Balance newBalance = new Balance();
-			newBalance.setId(balance.getId());
-			newBalance.setBalance(nBalance);
-			newBalance.setCustomerId(customer.getCustomerId());
+			Balance newBalance = new Balance(balance.getId(), customer.getCustomerId(), nBalance);
 			balanceRepository.save(newBalance);
 		}
 		transactions.setBalance(nBalance);
-
-
 
 		return transactionRepository.save(transactions);
 	}
@@ -76,8 +72,7 @@ public class TransactionService {
 			newBalance.setCustomerId(customer.getCustomerId());
 			balanceRepository.save(newBalance);
 		}else{
-			Double currentBalance = customerBalance.getBalance();
-			Double nBalance = currentBalance + amount;
+			Double nBalance = customerBalance.getBalance() + amount;
 			customerBalance.setBalance(nBalance);
 			newBalance.setBalance(nBalance);
 			balanceRepository.save(newBalance);
