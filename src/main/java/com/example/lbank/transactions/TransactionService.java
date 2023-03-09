@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 @Service
@@ -27,7 +28,7 @@ public class TransactionService {
 		return transactionRepository.findAllByCustomer(customerUUID);
 	}
 
-	public Transactions addTransaction(TransactionDTO transactionDTO) {
+	public Transactions addTransaction(TransactionDTO transactionDTO, Boolean addMoney) {
 		Transactions transactions = new Transactions();
 		Customer customer = getCustomer(transactionDTO.getCustomerId());
 		transactions.setCustomer(customer);
@@ -35,47 +36,62 @@ public class TransactionService {
 		transactions.setDescription(transactionDTO.getDescription());
 		transactions.setDate(transactionDTO.getDate());
 		transactions.setAmount(transactionDTO.getAmount());
+
 		Balance balance = balanceRepository.findTopByCustomerId(transactionDTO.getCustomerId());
 		Double currentBalance = balance.getBalance();
-		Double nBalance = currentBalance - transactions.getAmount();
+		Double nBalance;
+		if(addMoney){
+			nBalance = currentBalance + transactions.getAmount();
+		}else{
+			nBalance = currentBalance - transactions.getAmount();
+
+			Balance newBalance = new Balance();
+			newBalance.setId(balance.getId());
+			newBalance.setBalance(nBalance);
+			newBalance.setCustomerId(customer.getCustomerId());
+			balanceRepository.save(newBalance);
+		}
 		transactions.setBalance(nBalance);
 
-		Balance newBalance = new Balance();
-		newBalance.setId(balance.getId());
-		newBalance.setBalance(nBalance);
-		newBalance.setCustomerId(customer.getCustomerId());
-		balanceRepository.save(newBalance);
+
 
 		return transactionRepository.save(transactions);
 	}
 
 
-	public Boolean checkBalance(@Param("customer") Double price, String customer){
+	public Boolean checkBalance(Double price, String customer){
 		Balance balance = balanceRepository.findTopByCustomerId(customer);
 		return balance.getBalance() > price;
 	}
 
 	public String deposit(Deposit deposit){
 		String customerId = deposit.getCustomerId();
+		Double amount = deposit.getAmount();
 		Balance customerBalance = balanceRepository.findTopByCustomerId(customerId);
 
 		Balance newBalance = new Balance();
 		Customer customer = getCustomer(deposit.getCustomerId());
 		if(customerBalance == null){
-			newBalance.setBalance(deposit.getAmount());
+			newBalance.setBalance(amount);
 			newBalance.setCustomerId(customer.getCustomerId());
 			balanceRepository.save(newBalance);
-			return "First time deposit";
+		}else{
+			Double currentBalance = customerBalance.getBalance();
+			Double nBalance = currentBalance + amount;
+			customerBalance.setBalance(nBalance);
+			newBalance.setBalance(nBalance);
+			balanceRepository.save(newBalance);
 		}
 
-		Double currentBalance = customerBalance.getBalance();
-		Double nBalance = currentBalance + deposit.getAmount();
-		customerBalance.setBalance(nBalance);
-		newBalance.setBalance(nBalance);
-		balanceRepository.save(newBalance);
+		TransactionDTO transactionDTO = new TransactionDTO();
+		transactionDTO.setCustomerId(customerId);
+		transactionDTO.setAmount(amount);
+		transactionDTO.setDescription("Deposit");
+		transactionDTO.setDate(LocalDate.now());
+		addTransaction(transactionDTO, true);
+
 		return "Deposit completed";
 	}
-
 
 	public Double getBalance(String customerId){
 		Balance balance = balanceRepository.findTopByCustomerId(customerId);

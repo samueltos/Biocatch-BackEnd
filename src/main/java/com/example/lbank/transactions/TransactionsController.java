@@ -33,7 +33,7 @@ public class TransactionsController {
 		if(!transactionService.checkBalance(price,customerId)){
 			return new ResponseEntity<>("You do not have enough balance", HttpStatus.INSUFFICIENT_STORAGE);
 		}
-		Transactions response = transactionService.addTransaction(transactionDTO);
+		Transactions response = transactionService.addTransaction(transactionDTO, false);
 		return new ResponseEntity<>(response, HttpStatus.CREATED);
 	}
 
